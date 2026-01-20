@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicle Profit Manager</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#f1f3f6}
+header{background:#0d47a1;color:#fff;padding:15px;text-align:center;font-size:20px}
+nav{display:flex;background:#fff}
+nav button{flex:1;padding:12px;border:none;background:#e3eaf2;font-size:15px}
+nav button.active{background:#0d47a1;color:#fff}
+section{display:none;padding:15px}
+section.active{display:block}
+.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+input,select,button{width:100%;padding:10px;margin-top:8px;font-size:15px}
+button{background:#0d47a1;color:#fff;border:none;border-radius:6px}
+.red{color:red;font-weight:bold}
+.green{color:green;font-weight:bold}
+.trip{border-bottom:1px solid #ddd;padding:8px 0}
+.trip button{background:#c62828;margin-top:5px}
+</style>
+</head>
+<script>
+let trips = JSON.parse(localStorage.getItem("trips")) || [];
+let fixedCost = Number(localStorage.getItem("fixedCost")) || 0;
+let vehicles = JSON.parse(localStorage.getItem("vehicles")) || ["Default Vehicle"];
+
+function openTab(id,btn){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById(id).classList.add("active");
+  if(id==="dash") renderDashboard();
+  if(id==="list") renderTrips();
+  if(id==="report") renderReport();
+}
+
+function renderDashboard(){
+  let income=0,expense=0,km=0;
+  trips.forEach(t=>{
+    income+=t.income;
+    expense+=t.expense;
+    km+=t.km;
+  });
+  let net = income-expense-fixedCost;
+
+  dash.innerHTML=`
+  <div class="card">
+    <h3>📊 Overall Summary</h3>
+    <p>Total KM: ${km}</p>
+    <p>Income: ₹${income}</p>
+    <p>Expense: ₹${expense}</p>
+    <p>Fixed Cost: ₹${fixedCost}</p>
+    <p class="${net>=0?'green':'red'}">Net Profit: ₹${net}</p>
+  </div>
+
+  <div class="card">
+    <h3>⚙️ Monthly Fixed Cost</h3>
+    <input type="number" id="fc" value="${fixedCost}">
+    <button onclick="saveFixed()">Save</button>
+  </div>
+
+  <div class="card">
+    <h3>🚗 Vehicles</h3>
+    <input id="vehName" placeholder="Add Vehicle Name">
+    <button onclick="addVehicle()">Add Vehicle</button>
+    <p>${vehicles.join(", ")}</p>
+  </div>
+  `;
+}
+
+function saveFixed(){
+  fixedCost=+fc.value;
+  localStorage.setItem("fixedCost",fixedCost);
+  renderDashboard();
+}
+
+function addVehicle(){
+  let v=document.getElementById("vehName").value;
+  if(v){
+    vehicles.push(v);
+    localStorage.setItem("vehicles",JSON.stringify(vehicles));
+    renderDashboard();
+  }
+}
+
+add.innerHTML=`
+<div class="card">
+<h3>➕ Add Trip</h3>
+<select id="vehicle">
+${vehicles.map(v=>`<option>${v}</option>`).join("")}
+</select>
+<input type="date" id="date" value="${new Date().toISOString().slice(0,10)}">
+<input type="number" id="skm" placeholder="Start KM">
+<input type="number" id="ekm" placeholder="End KM">
+<input type="number" id="income" placeholder="Income ₹">
+<input type="number" id="commission" placeholder="Commission ₹">
+<input type="number" id="cng" placeholder="CNG ₹">
+<input type="number" id="toll" placeholder="Toll / Parking ₹">
+<input type="number" id="personal" placeholder="Personal Expense ₹">
+<input type="number" id="maint" placeholder="Maintenance ₹">
+<button onclick="saveTrip()">Save Trip</button>
+</div>`;
+
+function saveTrip(){
+  let exp=+commission.value+ +cng.value+ +toll.value+ +personal.value+ +maint.value;
+  trips.push({
+    date:date.value,
+    vehicle:vehicle.value,
+    km:+ekm.value-+skm.value,
+    income:+income.value,
+    expense:exp
+  });
+  localStorage.setItem("trips",JSON.stringify(trips));
+  alert("Trip Saved");
+}
+
+function renderTrips(){
+  list.innerHTML='<div class="card"><h3>📋 Trips</h3></div>';
+  trips.forEach((t,i)=>{
+    list.innerHTML+=`
+    <div class="card trip">
+      <p>${t.date} | ${t.vehicle}</p>
+      <p>KM ${t.km} | Income ₹${t.income} | Expense ₹${t.expense}</p>
+      <p class="${t.income-t.expense>=0?'green':'red'}">Profit ₹${t.income-t.expense}</p>
+      <button onclick="del(${i})">Delete</button>
+    </div>`;
+  });
+}
+
+function del(i){
+  if(confirm("Delete?")){
+    trips.splice(i,1);
+    localStorage.setItem("trips",JSON.stringify(trips));
+    renderTrips();
+  }
+}
+  function renderReport(){
+  let month=new Date().toISOString().slice(0,7);
+  let mi=0,me=0,mk=0;
+
+  trips.forEach(t=>{
+    if(t.date.startsWith(month)){
+      mi+=t.income;
+      me+=t.expense;
+      mk+=t.km;
+    }
+  });
+
+  report.innerHTML=`
+  <div class="card">
+    <h3>📅 Monthly Report</h3>
+    <p>Month: ${month}</p>
+    <p>KM: ${mk}</p>
+    <p>Income: ₹${mi}</p>
+    <p>Expense: ₹${me}</p>
+    <p class="${mi-me>=0?'green':'red'}">Profit: ₹${mi-me}</p>
+  </div>
+
+  <div class="card">
+    <h3>📤 Export / Backup</h3>
+    <button onclick="exportCSV()">Export Excel</button>
+    <button onclick="backup()">Backup Data</button>
+  </div>`;
+}
+
+function exportCSV(){
+  let csv="Date,Vehicle,KM,Income,Expense\n";
+  trips.forEach(t=>{
+    csv+=`${t.date},${t.vehicle},${t.km},${t.income},${t.expense}\n`;
+  });
+  download(csv,"trips.csv");
+}
+
+function backup(){
+  download(JSON.stringify(trips),"backup.json");
+}
+
+function download(data,file){
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([data]));
+  a.download=file;
+  a.click();
+}
+
+renderDashboard();
+</script>
+
+</body>
+</html>
+<body>
+
+<header>🚚 Vehicle Profit Manager</header>
+
+<nav>
+<button onclick="openTab('dash',this)" class="active">Dashboard</button>
+<button onclick="openTab('add',this)">Add Trip</button>
+<button onclick="openTab('list',this)">Trips</button>
+<button onclick="openTab('report',this)">Reports</button>
+</nav>
+
+<section id="dash" class="active"></section>
+<section id="add"></section>
+<section id="list"></section>
+<section id="report"></section>
