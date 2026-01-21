@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <title>FutureVibe Logistics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSS Link -->
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+    <div class="app-header">
+        <h1>FutureVibe Logistics</h1>
+        <p class="subtitle">Cash Only · Offline Demo · OTP: 7547</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="openPage('customer')">Customer</button>
+        <button class="tab" onclick="openPage('driver')">Driver</button>
+        <button class="tab" onclick="openPage('admin')">Admin</button>
+    </div>
+
+    <div class="page-container">
+        <iframe id="frame" src="customer.html"></iframe>
+    </div>
+
+    <script>
+        function openPage(page) {
+            document.getElementById("frame").src = page + ".html";
+
+            let t = document.querySelectorAll(".tab");
+            t.forEach(btn => btn.classList.remove("active"));
+
+            event.target.classList.add("active");
+        }
+    </script>
+
+</body>
+</html>
